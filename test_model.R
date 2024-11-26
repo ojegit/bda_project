@@ -41,7 +41,7 @@ if (model_name == "garch101") {
   par_names_fore <- c("y_fore[1]", "h_fore[1]",'lpdf_fore[1]')
   
   model_data <- list(
-    N = length(y),
+    N = N,
     y = y,
     u0 = 0,
     h0 = mean( (y-mean(y))^2 ),
@@ -59,7 +59,7 @@ if (model_name == "garch101") {
   par_names_fore <- c("y_fore[1]", "h_fore[1]",'lpdf_fore[1]')
   
   model_data <- list(
-    N = length(y),
+    N = N,
     y = y,
     u0 = 0,
     h0 = mean( (y-mean(y))^2 ),
@@ -76,7 +76,7 @@ if (model_name == "garch101") {
   par_names_fore <- c("y_fore[1]", "x_fore[1]",'lpdf_fore[1]')
   
   model_data <- list(
-    N = length(y),
+    N = N,
     y = y,
     u0 = 0,
     x0 = log( mean( (y-mean(y))^2 ) ),
@@ -94,14 +94,14 @@ if (model_name == "garch101") {
   par_names_fore <- c("y_fore[1]", "x_fore[1]",'lpdf_fore[1]')
   
   model_data <- list(
-    N = length(y),
+    N = N,
     y = y,
     u0 = 0,
     x0 = log( mean( (y-mean(y))^2 ) ),
     mu0_mu = rep(0,1),
     s0_mu = rep(1,1),
-    mu0_gp = rep(0,3),
-    s0_gp = rep(1,3),
+    mu0_gp = rep(0,4),
+    s0_gp = rep(1,4),
     n_steps_ahead = 1
   )
   
@@ -111,7 +111,7 @@ if (model_name == "garch101") {
   par_names_fore <- c("y_fore[1]", "h_fore[1]",'lpdf_fore[1]')
   
   model_data <- list(
-    N = length(y),
+    N = N,
     y = y,
     u0 = 0,
     h0 = mean( (y-mean(y))^2 ),
@@ -131,7 +131,7 @@ if (model_name == "garch101") {
   par_names_fore <- c("y_fore[1]", "h_fore[1]",'lpdf_fore[1]')
   
   model_data <- list(
-    N = length(y),
+    N = N,
     y = y,
     u0 = 0,
     h0 = mean( (y-mean(y))^2 ),

@@ -63,7 +63,7 @@ generated quantities {
   real ut = y[N] - mu;
   h_fore[1] = omega + alpha * ut * ut + beta * h[N];
   }
-  y_fore[1] = normal_rng(mu, sqrt(h[N] + 1e-8));
+  y_fore[1] = normal_rng(mu, sqrt( h_fore[1] + 1e-8));
   for (t in 2:n_steps_ahead) {
     {
     real ut = y_fore[t-1] - mu;
