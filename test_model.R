@@ -204,7 +204,7 @@ print(loo_fit_out)
 model_pred <- compiled_model$generate_quantities(
   fitted_params = model_fit,
   data = model_data,
-  parallel_chains = 2
+  parallel_chains = parallel_chains
 )
 
 # plot predictions' distributions
