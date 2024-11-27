@@ -27,8 +27,8 @@ parameters {
   real<lower=0,upper=1> alpha22; //reg2 Leverage coeff
   real<lower=0,upper=1> beta1; //reg1 GARCH coeff
   real<lower=0,upper=1> beta2; //reg2 GARCH coeff
-  real<lower=0,upper=1> p; //tp matrix element [1,1]
-  real<lower=0,upper=1> q; //tp matrix element [2,2]
+  real<lower=0,upper=1> p11; //tp matrix element [1,1]
+  real<lower=0,upper=1> p22; //tp matrix element [2,2]
 }
 
 
@@ -52,8 +52,8 @@ transformed parameters {
   
   //tp matrix
   P[1,1] = p11;
-  P[1,2] = (1-p11);
-  P[2,1] = (1-p22);
+  P[1,2] = 1-p11;
+  P[2,1] = 1-p22;
   P[2,2] = p22;
   
   // Variance

@@ -31,6 +31,8 @@ for (i in 1:fore_win) {
 
     ### 1. FIT MODEL 
     ### 2. FORECAST MODEL
-    ### 3. SAVE RESULTS
+    ### 3. SAVE FIT AND PRED MODEL RESULTS
+    #https://mc-stan.org/cmdstanr/reference/fit-method-save_output_files.html
+    #https://discourse.mc-stan.org/t/import-csv-output-from-cmdstan-in-r-how-to-indicate-the-chain/20595/3
     #paste(save_name,'_fore_step_',i,sep="")
 }

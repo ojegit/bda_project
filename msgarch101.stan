@@ -50,8 +50,8 @@ transformed parameters {
   
   //tp matrix
   P[1,1] = p11;
-  P[1,2] = (1-p11);
-  P[2,1] = (1-p22);
+  P[1,2] = 1-p11;
+  P[2,1] = 1-p22;
   P[2,2] = p22;
   
   // Variance
