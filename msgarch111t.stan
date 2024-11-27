@@ -1,4 +1,4 @@
-//MS-GARCH(1,1), Haas (2004) parameterization
+//MS-GARCH(1,1,1) or MS-GJR Haas (2004) parameterization
 
 data {
   int<lower=0> N; //number of observations
@@ -9,10 +9,11 @@ data {
   //hyperparameters
   real mu0_mu; //Mean, normal, mu
   real<lower=0> s0_mu; //Mean, normal, stdev
-  vector[6] mu0_gp; //Variance, normal, mu
-  vector<lower=0>[6] s0_gp; //Variance, normal, stdev 
+  vector[8] mu0_gp; //Variance, normal, mu
+  vector<lower=0>[8] s0_gp; //Variance, normal, stdev 
   vector<lower=0>[2] a0_tp; //transition probabilities (tp) matrix diagonals, beta, shape
   vector<lower=0>[2] b0_tp; //transition probabilities (tp) matrix diagonals, beta, scale
+  real<lower=0> lambda0_nu;      // Rate parameter for exponential prior for student's t degrees of freedom
   
   int<lower=1> n_steps_ahead; // Number of forecast steps ahead
 }
@@ -21,12 +22,15 @@ parameters {
   real mu; //mean eq
   real<lower=0> omega1; //reg1 constant
   real<lower=0> omega2; //reg2 constant
-  real<lower=0,upper=1> alpha1; //reg1 ARCH coeff
-  real<lower=0,upper=1> alpha2; //reg2 ARCH coeff
+  real<lower=0,upper=1> alpha11; //reg1 ARCH coeff
+  real<lower=0,upper=1> alpha12; //reg2 ARCH coeff
+  real<lower=0,upper=1> alpha21; //reg1 Leverage coeff
+  real<lower=0,upper=1> alpha22; //reg2 Leverage coeff
   real<lower=0,upper=1> beta1; //reg1 GARCH coeff
   real<lower=0,upper=1> beta2; //reg2 GARCH coeff
   real<lower=0,upper=1> p11; //tp matrix element [1,1]
   real<lower=0,upper=1> p22; //tp matrix element [2,2]
+  real<lower=2> nu; //degrees of freedom parameter for student's t distribution
 }
 
 
@@ -37,7 +41,7 @@ transformed parameters {
   matrix[2,1] ppt; //posterior probability
   matrix[2,1] fpt; //filtered probability
   real c;
-  real k = log(2*pi());
+  real k = lgamma( 0.5*(nu+1) ) -  lgamma( 0.5*nu ) - 0.5*log(pi()*(nu-2)); //lpdf term
   real u1;
   matrix[2,1] u2;
   vector[N] lpdf; //log-density
@@ -50,14 +54,14 @@ transformed parameters {
   
   //tp matrix
   P[1,1] = p11;
-  P[1,2] = 1-p11;
-  P[2,1] = 1-p22;
+  P[1,2] = (1-p11);
+  P[2,1] = (1-p22);
   P[2,2] = p22;
   
   // Variance
   //t = 1
-  ht[1,1] = omega1 + alpha1 * u0 * u0 + beta1 * h0; //reg 1
-  ht[2,1] = omega2 + alpha2 * u0 * u0 + beta2 * h0; //reg 2
+  ht[1,1] = omega1 + alpha11 * u0 * u0 + alpha21 * (u0 < 0) * u0 * u0 + beta1 * h0; //reg 1
+  ht[2,1] = omega2 + alpha12 * u0 * u0 + alpha22 * (u0 < 0) * u0 * u0 + beta2 * h0; //reg 2
   
   fpt[1, 1] = (1-p22)/(2-p11-p22); //initialize at steady state prob
   fpt[2, 1] = 1 - fpt[1,1];
@@ -67,7 +71,7 @@ transformed parameters {
   u2[1,1] = y[1] - mu;
   u2[2,1] = u2[1,1];
   
-  L = log(fpt + 1e-8) - 0.5*(k + log(ht + 1e-8) + (u2 .* u2) ./ (ht + 1e-8));
+  L = log(fpt + 1e-8) + k - 0.5*log( ht + 1e-8 ) - 0.5*(nu+1) * log( 1 + (u2 .* u2) ./ (ht * (nu-2) + 1e-8) );
   c = max(L);
   
   L = exp(L - c);
@@ -84,13 +88,13 @@ transformed parameters {
   for (t in 2:N) {
     
     u1 = y[t-1] - mu;
-    ht[1,1] = omega1 + alpha1 * u1 * u1 + beta1 * ht[1,1];
-    ht[2,1] = omega2 + alpha2 * u1 * u1 + beta2 * ht[2,1];
+    ht[1,1] = omega1 + alpha11 * u1 * u1 + alpha21 * (u1 < 0) * u1 * u1 + beta1 * ht[1,1];
+    ht[2,1] = omega2 + alpha12 * u1 * u1 + alpha22 * (u1 < 0) * u1 * u1 + beta2 * ht[2,1];
 
     u2[1,1] = y[t] - mu;
     u2[2,1] = u2[1,1];
     
-    L = log(fpt + 1e-8) - 0.5*(k + log(ht + 1e-8) + (u2.*u2) ./ (ht + 1e-8));
+    L = log(fpt + 1e-8) + k - 0.5*log( ht + 1e-8 ) - 0.5*(nu+1) * log( 1 + (u2 .* u2) ./ (ht * (nu-2) + 1e-8) );
     c = max(L);
     
     L = exp(L - c);
@@ -113,14 +117,17 @@ model {
 
   // Priors
   mu ~ normal(mu0_mu, s0_mu);
-  omega1 ~ normal(mu0_gp[1],s0_gp[1]);
-  omega2 ~ normal(mu0_gp[2],s0_gp[2]);
-  alpha1 ~ normal(mu0_gp[3],s0_gp[3]);
-  alpha2 ~ normal(mu0_gp[4],s0_gp[4]);
-  beta1 ~ normal(mu0_gp[5],s0_gp[5]);
-  beta2 ~ normal(mu0_gp[6],s0_gp[6]);
+  omega1 ~ normal(mu0_gp[1], s0_gp[1]);
+  omega2 ~ normal(mu0_gp[2], s0_gp[2]);
+  alpha11 ~ normal(mu0_gp[3], s0_gp[3]);
+  alpha12 ~ normal(mu0_gp[4], s0_gp[4]);
+  alpha21 ~ normal(mu0_gp[5], s0_gp[5]);
+  alpha22 ~ normal(mu0_gp[6], s0_gp[6]);
+  beta1 ~ normal(mu0_gp[7], s0_gp[7]);
+  beta2 ~ normal(mu0_gp[8], s0_gp[8]);
   p11 ~ beta(a0_tp[1], b0_tp[1]);
   p22 ~ beta(a0_tp[2], b0_tp[2]);
+  nu ~ exponential(lambda0_nu);
 }
 
 
@@ -141,8 +148,8 @@ generated quantities {
     uft[1,1] = y[N] - mu;
     uft[2,1] = uft[1,1];
     
-    hft[1,1] = omega1 + alpha1 * uft[1,1] * uft[1,1] + beta1 * h[N, 1]; //reg 1
-    hft[2,1] = omega2 + alpha2 * uft[2,1] * uft[2,1] + beta2 * h[N, 2]; //reg 2
+    hft[1,1] = omega1 + alpha11 * uft[1,1] * uft[1,1] + alpha21 * (uft[1,1] < 0) * uft[1,1] * uft[1,1] + beta1 * h[N, 1]; //reg 1
+    hft[2,1] = omega2 + alpha12 * uft[2,1] * uft[2,1] + alpha22 * (uft[2,1] < 0) * uft[2,1] * uft[2,1] + beta2 * h[N, 2]; //reg 2
     
     ppft[1,1] = pp[N, 1];
     ppft[2,1] = pp[N, 2];
@@ -150,14 +157,14 @@ generated quantities {
     ppft = P*ppft;
     
     
-    yft[1,1] = normal_rng(mu, sqrt(hft[1,1] + 1e-8) );
-    yft[2,1] = normal_rng(mu, sqrt(hft[2,1] + 1e-8) ); 
+    yft[1,1] = student_t_rng(nu, mu, sqrt(hft[1,1] + 1e-8) );
+    yft[2,1] = student_t_rng(nu, mu, sqrt(hft[2,1] + 1e-8) ); 
     
     y_fore[1] = yft[1,1]*ppft[1,1] + yft[2,1]*ppft[2,1]; //collapse regs
     h_fore[1] = hft[1,1]*ppft[1,1] + hft[2,1]*ppft[2,1]; //collapse regs
     
     uft = yft - mu;
-    Lf = log(ppft + 1e-8) - 0.5*(k + log(hft + 1e-8) + (uft .* uft) ./ (hft + 1e-8));
+    Lf = log(ppft + 1e-8) + k - 0.5*log( hft + 1e-8 ) - 0.5*(nu+1) * log( 1 + (uft .* uft) ./ (hft * (nu-2) + 1e-8) );
     cf = max(Lf);
     
     Lf = exp(Lf - cf);
@@ -166,19 +173,19 @@ generated quantities {
   
     //t > 1
     for (t in 2:n_steps_ahead) {
-      hft[1,1] = omega1 + alpha1 * uft[1,1] * uft[1,1] + beta1 * hft[1,1]; //reg 1
-      hft[2,1] = omega2 + alpha2 * uft[2,1] * uft[2,1] + beta2 * hft[2,1]; //reg 2
+      hft[1,1] = omega1 + alpha11 * uft[1,1] * uft[1,1] + alpha21 * (uft[1,1] < 0) * uft[1,1] * uft[1,1] + beta1 * hft[1,1]; //reg 1
+      hft[2,1] = omega2 + alpha12 * uft[2,1] * uft[2,1] + alpha22 * (uft[2,1] < 0) * uft[2,1] * uft[2,1] + beta2 * hft[2,1]; //reg 2
       
       ppft = P*ppft;
       
-      yft[1,1] = normal_rng(mu, sqrt(hft[1,1] + 1e-8) );
-      yft[2,1] = normal_rng(mu, sqrt(hft[2,1] + 1e-8) ); 
+      yft[1,1] = student_t_rng(nu, mu, sqrt(hft[1,1] + 1e-8) );
+      yft[2,1] = student_t_rng(nu, mu, sqrt(hft[2,1] + 1e-8) ); 
       
       y_fore[t] = yft[1,1]*ppft[1,1] + yft[2,1]*ppft[2,1];  //collapse regs
       h_fore[t] = hft[1,1]*ppft[1,1] + hft[2,1]*ppft[2,1];  //collapse regs
       
       uft = yft - mu;
-      Lf = log(ppft + 1e-8) - 0.5*(k + log(hft + 1e-8) + (uft .* uft) ./ (hft + 1e-8));
+      Lf = log(ppft + 1e-8) + k - 0.5*log( hft + 1e-8 ) - 0.5*(nu+1) * log( 1 + (uft .* uft) ./ (hft * (nu-2) + 1e-8) );
       cf = max(Lf);
       
       Lf = exp(Lf - cf);

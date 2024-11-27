@@ -9,36 +9,37 @@ library(loo)
 
 
 ### load data
-data <- read.csv("./Data/m-geln.txt",header = FALSE) #Gemeral Electric stock monthly log-returns (https://faculty.chicagobooth.edu/ruey-s-tsay/research/analysis-of-financial-time-series-3rd-edition)
+data <- read.csv("./data/m-geln.txt",header = FALSE) #General Electric stock monthly log-returns (https://faculty.chicagobooth.edu/ruey-s-tsay/research/analysis-of-financial-time-series-3rd-edition)
 y <- data$V1
 N <- length(y)
 
 
 ### model settings
 # model name
-model_name <- "msgarch101" #available models: garch101, garch111, egarch101, egarch111, msgarch101, msgarch111
-
+model_name <- "garch101" #available models: garch101, garch111, egarch101, egarch111, msgarch101, msgarch111
+dist_name <- "n"           #available distributions: t, n 
 
 # simulation options
-refresh = 10
-iter_warmup = 2000
-iter_sampling = 1000
-chains = 2
-parallel_chains = 2
-show_messages = TRUE
+refresh <- 10
+iter_warmup <- 2000
+iter_sampling <- 1000
+chains <- 2
+parallel_chains <- 2
+show_messages <- TRUE
 
 # compile stan file
 compile <- FALSE #set to FALSE if already compiled and the .exe file is loaded instead (modify for Linux)
 
 # generate file names
-model_file <- paste("./",model_name,".stan", sep="")
-compiled_file <- paste("./",model_name,".exe", sep="")
+model_file <- paste("./",model_name,dist_name,".stan", sep="")
+compiled_file <- paste("./",model_name,dist_name,".exe", sep="")
 
 
 if (model_name == "garch101") {
   
   par_names_fit <- c("mu", "omega", "alpha", "beta")
   par_names_fore <- c("y_fore[1]", "h_fore[1]",'lpdf_fore[1]')
+  
   
   model_data <- list(
     N = N,
@@ -51,9 +52,9 @@ if (model_name == "garch101") {
     s0_gp = rep(1,3),
     n_steps_ahead = 1
   )
+
   
-  
-} else if(model_name == "garch111") {
+} else if (model_name == "garch111") {
   
   par_names_fit <- c("mu", "omega", "alpha1", "alpha2", "beta")
   par_names_fore <- c("y_fore[1]", "h_fore[1]",'lpdf_fore[1]')
@@ -69,6 +70,8 @@ if (model_name == "garch101") {
     s0_gp = rep(1,4),
     n_steps_ahead = 1
   )
+  
+  
   
 } else if(model_name == "egarch101") {
   
@@ -117,7 +120,7 @@ if (model_name == "garch101") {
     h0 = mean( (y-mean(y))^2 ),
     mu0_mu = rep(0,1),
     s0_mu = rep(1,1),
-    mu0_gp = rep(0,6),
+    mu0_gp = c(1, rep(0,5)), #set mean apart in an attempt avoid label switching between the chains
     s0_gp = rep(1,6),
     a0_tp = rep(1,2),
     b0_tp = rep(2,2),
@@ -137,7 +140,7 @@ if (model_name == "garch101") {
     h0 = mean( (y-mean(y))^2 ),
     mu0_mu = rep(0,1),
     s0_mu = rep(1,1),
-    mu0_gp = rep(0,8),
+    mu0_gp = c(1, rep(0,7)), #set mean apart in an attempt avoid label switching between the chains
     s0_gp = rep(1,8),
     a0_tp = rep(1,2),
     b0_tp = rep(2,2),
@@ -149,6 +152,18 @@ if (model_name == "garch101") {
   stop("Model name not found!")
   
 }
+
+if (dist_name == "t") {
+  
+  par_names_fit <- c(par_names_fit, "nu")
+  model_data$lambda0_nu <- 1/10
+  
+} else if ( dist_name != "n" ) {
+  
+  stop("Distribution name not found!")
+  
+}
+
 
 # open the stan file
 if (!compile) {
