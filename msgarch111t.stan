@@ -13,7 +13,7 @@ data {
   vector<lower=0>[8] s0_gp; //Variance, normal, stdev 
   vector<lower=0>[2] a0_tp; //transition probabilities (tp) matrix diagonals, beta, shape
   vector<lower=0>[2] b0_tp; //transition probabilities (tp) matrix diagonals, beta, scale
-  real<lower=0> lambda0_nu;      // Rate parameter for exponential prior for student's t degrees of freedom
+  real<lower=0> lambda0_nu; // Rate parameter for exponential prior for student's t degrees of freedom
   
   int<lower=1> n_steps_ahead; // Number of forecast steps ahead
 }
@@ -21,7 +21,8 @@ data {
 parameters {
   real mu; //mean eq
   real<lower=0> omega1; //reg1 constant
-  real<lower=0> omega2; //reg2 constant
+  //real<lower=0> omega2; //reg2 constant
+  real<lower=omega1> omega2; //reg2 constant (lower limit set to mitigate label switching)
   real<lower=0,upper=1> alpha11; //reg1 ARCH coeff
   real<lower=0,upper=1> alpha12; //reg2 ARCH coeff
   real<lower=0,upper=1> alpha21; //reg1 Leverage coeff

@@ -20,7 +20,8 @@ data {
 parameters {
   real mu; //mean eq
   real<lower=0> omega1; //reg1 constant
-  real<lower=0> omega2; //reg2 constant
+  //real<lower=0> omega2; //reg2 constant
+  real<lower=omega1> omega2; //reg2 constant (lower limit set to mitigate label switching)
   real<lower=0,upper=1> alpha11; //reg1 ARCH coeff
   real<lower=0,upper=1> alpha12; //reg2 ARCH coeff
   real<lower=0,upper=1> alpha21; //reg1 Leverage coeff
