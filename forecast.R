@@ -88,5 +88,4 @@ for (i in 1:fore_win) {
   # fit and forecast
   fit_and_predict_model(compiled_model, simulation_settings)
 }
-
-
+### EOF

@@ -217,7 +217,7 @@ print(loo_fit_out)
 
 ### predict model
 model_pred <- compiled_model$generate_quantities(
-  fitted_params = model_fit,
+  fitted_params = model_fit$draws(),
   data = model_data,
   parallel_chains = parallel_chains
 )
