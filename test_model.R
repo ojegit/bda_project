@@ -120,10 +120,10 @@ if (model_name == "garch101") {
     h0 = mean( (y-mean(y))^2 ),
     mu0_mu = rep(0,1),
     s0_mu = rep(1,1),
-    mu0_gp = c(1, rep(0,5)), #set mean apart in an attempt avoid label switching between the chains
+    mu0_gp = c(0, 0.01, rep(0,4)), #set mean apart in an attempt avoid label switching between the chains
     s0_gp = rep(1,6),
-    a0_tp = rep(1,2),
-    b0_tp = rep(2,2),
+    a0_tp = rep(2,2),
+    b0_tp = rep(1,2),
     n_steps_ahead = 1
   )
   
@@ -140,10 +140,10 @@ if (model_name == "garch101") {
     h0 = mean( (y-mean(y))^2 ),
     mu0_mu = rep(0,1),
     s0_mu = rep(1,1),
-    mu0_gp = c(1, rep(0,7)), #set mean apart in an attempt avoid label switching between the chains
+     mu0_gp = c(0, 0.01, rep(0,6)), #set mean apart in an attempt avoid label switching between the chains
     s0_gp = rep(1,8),
-    a0_tp = rep(1,2),
-    b0_tp = rep(2,2),
+    a0_tp = rep(2,2),
+    b0_tp = rep(1,2),
     n_steps_ahead = 1
   )
   
