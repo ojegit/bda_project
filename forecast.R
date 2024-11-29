@@ -6,10 +6,21 @@
 library(cmdstanr)
 source("fit_and_predict_model.R")
 
+
+### load data
+data <- read.csv("./data/m-geln.txt",header = FALSE) #General Electric stock monthly log-returns (https://faculty.chicagobooth.edu/ruey-s-tsay/research/analysis-of-financial-time-series-3rd-edition)
+y <- data$V1
+# data <- read.csv('./data/sp500_mo.txt', header = TRUE, sep = "\t")
+# y <- 100*diff(log(data$SP500))
+N <- length(y)
+data_name <- "GE"
+
+
 ### model settings
 model_name <- "garch101n" #full model name including the dist i.e garch101n, msgarch101t etc
 compile <- FALSE 
 save_draws <- FALSE #this takes a long time the larger the results (.RDS or the fitted model is always saved)
+
 
 # stan data inputs
 model_data <- list( 
@@ -32,16 +43,11 @@ if (!compile) {
   compiled_model <- cmdstan_model( paste("./",model_name,".stan", sep="") )
 }
 
-### load data
-data <- read.csv("./data/m-geln.txt",header = FALSE) #General Electric stock monthly log-returns (https://faculty.chicagobooth.edu/ruey-s-tsay/research/analysis-of-financial-time-series-3rd-edition)
-y <- data$V1
-# data <- read.csv('./data/sp500_mo.txt', header = TRUE, sep = "\t")
-# y <- 100*diff(log(data$SP500))
-N <- length(y)
+
 
 
 ### create folders for results
-save_folder <- file.path(".","results",model_name) #default: ./results/[model_name]/
+save_folder <- file.path(".","results",data_name,model_name) #default: ./results/[data_name/[model_name]/
 dir.create(save_folder, recursive = TRUE) #comment out if path exists (it's checked anyway)
 
 

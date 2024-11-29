@@ -21,7 +21,7 @@ parameters {
 }
 
 transformed parameters {
-  real st;
+  real st; //delta:th power of volatility (needs to be converted back to variance or volatility/stdev squared)
   vector[N] h;
   vector[N] lpdf;
 
