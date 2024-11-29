@@ -1,6 +1,6 @@
-
-
-### EXAMPLE FORECASTING FOR GARCH(1,0,1)
+################################################################
+### forecast.R
+################################################################
 
 ### load libraries
 library(cmdstanr)
@@ -12,7 +12,7 @@ compile <- FALSE
 save_draws <- FALSE #this takes a long time the larger the results (.RDS or the fitted model is always saved)
 
 # stan data inputs
-model_data <- list(
+model_data <- list( 
   N = NA, #set at the forecast loop
   y = NA, #set at the forecast loop
   u0 = 0, #set at the forecast loop
@@ -82,10 +82,10 @@ for (i in 1:fore_win) {
   simulation_settings$model_data$y <- y_slice #don't demean since mu is estimated!
   simulation_settings$model_data$N <- length( y_slice )
   simulation_settings$model_data$u0 <- 0
-  simulation_settings$model_data$h0 <- mean( (y - mean(y))^2 )
+  simulation_settings$model_data$h0 <- mean( (y_slice - mean(y_slice))^2 )
   simulation_settings$basename <- paste("fore_win_",i,sep = "")
   
-  # fit and forecast
+  # fit and predict model
   fit_and_predict_model(compiled_model, simulation_settings)
 }
 ### EOF

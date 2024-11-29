@@ -1,3 +1,7 @@
+################################################################
+### fit_and_predict_model.R
+################################################################
+
 
 ### load libraries
 library(cmdstanr)
@@ -30,6 +34,7 @@ fit_and_predict_model <- function(compiled_model, simulation_settings) {
 
     #fit pre model
     model_fit_pre <- compiled_model$optimize(
+      algorithm = "lbfgs", #"lbfgs", "bfgs", or "newton"
       data = model_data, 
       show_messages = show_messages,
       jacobian = TRUE)

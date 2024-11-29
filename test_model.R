@@ -1,3 +1,6 @@
+################################################################
+### test_model.R
+################################################################
 
 ### load libraries
 library(cmdstanr)
@@ -16,8 +19,8 @@ N <- length(y)
 
 ### model settings
 # model name
-model_name <- "garch101" #available models: garch101, garch111, egarch101, egarch111, msgarch101, msgarch111
-dist_name <- "n"           #available distributions: t, n 
+model_name <- "garch101" #available models: aparch101, aparch111, garch101, garch111, egarch101, egarch111, msgarch101, msgarch111
+dist_name <- "n"         #available distributions: t, n 
 
 # simulation options
 refresh <- 10
@@ -35,7 +38,45 @@ model_file <- paste("./",model_name,dist_name,".stan", sep="")
 compiled_file <- paste("./",model_name,dist_name,".exe", sep="")
 
 
-if (model_name == "garch101") {
+if (model_name == "aparch101") {
+
+  par_names_fit <- c("mu", "omega", "alpha", "beta", "delta")
+  par_names_fore <- c("y_fore[1]", "h_fore[1]",'lpdf_fore[1]')
+  
+  
+  model_data <- list(
+    N = N,
+    y = y,
+    u0 = 0,
+    h0 = mean( (y-mean(y))^2 ),
+    mu0_mu = rep(0,1),
+    s0_mu = rep(1,1),
+    mu0_gp = rep(0,4),
+    s0_gp = rep(1,4),
+    n_steps_ahead = 1
+  )
+  
+
+} else if (model_name == "aparch111") {
+  
+  par_names_fit <- c("mu", "omega", "alpha", "gamma", "beta", "delta")
+  par_names_fore <- c("y_fore[1]", "h_fore[1]",'lpdf_fore[1]')
+  
+  
+  model_data <- list(
+    N = N,
+    y = y,
+    u0 = 0,
+    h0 = mean( (y-mean(y))^2 ),
+    mu0_mu = rep(0,1),
+    s0_mu = rep(1,1),
+    mu0_gp = rep(0,5),
+    s0_gp = rep(1,5),
+    n_steps_ahead = 1
+  )
+  
+  
+} else if (model_name == "garch101") {
   
   par_names_fit <- c("mu", "omega", "alpha", "beta")
   par_names_fore <- c("y_fore[1]", "h_fore[1]",'lpdf_fore[1]')
@@ -215,27 +256,32 @@ print(loo_fit_out)
 #print(lml_out)
 
 
-### predict model
-model_pred <- compiled_model$generate_quantities(
-  fitted_params = model_fit$draws(),
-  data = model_data,
-  parallel_chains = parallel_chains
-)
+### predict model (update: there's no need for model_pred since model_fit already contains everything)
+#model_pred <- compiled_model$generate_quantities(
+#  fitted_params = model_fit$draws(),
+#  data = model_data,
+#  parallel_chains = parallel_chains
+#)
 
 # plot predictions' distributions
-mcmc_hist(model_pred$draws(), pars=par_names_fore)
+#mcmc_hist(model_pred$draws(), pars=par_names_fore)
+mcmc_hist(model_fit$draws(), pars=par_names_fore)
 
 
 # plot predictions' line plots
-mcmc_trace(model_pred$draws(), pars=par_names_fore) +
+#mcmc_trace(model_pred$draws(), pars=par_names_fore) +
+#  scale_colour_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73"))
+mcmc_trace(model_fit$draws(), pars=par_names_fore) +
   scale_colour_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73"))
 
 
 # print predicted model stats
-model_pred$summary(variables = par_names_fore)
+#model_pred$summary(variables = par_names_fore)
+model_fit$summary(variables = par_names_fore)
 
-summarise_draws(model_pred$draws(format = 'draws_list', variables = par_names_fore), 
+#summarise_draws(model_pred$draws(format = 'draws_list', variables = par_names_fore), 
+#                Rhat=rhat_basic, ESS= ess_mean, ~ess_quantile(.x, probs = 0.05))
+summarise_draws(model_fit$draws(format = 'draws_list', variables = par_names_fore), 
                 Rhat=rhat_basic, ESS= ess_mean, ~ess_quantile(.x, probs = 0.05))
-
 
 ### EOF
